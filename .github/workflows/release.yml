@@ -1,10 +1,9 @@
-name: 'C++ CI'
+name: 'Release'
 
 on:
   push:
     branches:
-      - master
-      - feature/github_actions
+      - 'master'
 
 jobs:
   build:
@@ -26,13 +25,14 @@ jobs:
           echo "PACKAGE_FILENAME=$(find . -type f -iname "*.deb" | head -1 | xargs basename)" >> $GITHUB_ENV
           echo "PACKAGE FILENAME"
           echo ${{ env.PACKAGE_FILENAME }}
-      - name: Run tests
-        run: cmake --build . --target test
       - name: Read version from header
         run: |
           echo "VERSION_MAJOR=$(cat version.h.in | grep MAJOR | tr -dc '0-9')" >> $GITHUB_ENV
           echo "VERSION_MINOR=$(cat version.h.in | grep MINOR | tr -dc '0-9')" >> $GITHUB_ENV
+      - name: Run tests
+        run: cmake --build . --target test
       - name: Create Release
+        if: success()
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -43,6 +43,7 @@ jobs:
           draft: false
           prerelease: false
       - name: Upload Release Asset
+        if: success()
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
