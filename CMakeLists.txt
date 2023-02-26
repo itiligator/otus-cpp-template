@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.12)
 
-set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
-set(PROJECT_VESRION 0.0.${PATCH_VERSION})
+file(READ "version.h.in" ver)
 
-project(helloworld VERSION ${PROJECT_VESRION})
+string(REGEX MATCH "PROJECT_VERSION_MAJOR ([0-9]*)" _ ${ver})
+set(VERSION_MAJOR ${CMAKE_MATCH_1})
+string(REGEX MATCH "PROJECT_VERSION_MINOR ([0-9]*)" _ ${ver})
+set(VERSION_MINOR ${CMAKE_MATCH_1})
+set(PATCH_VERSION "1" CACHE INTERNAL "Patch version")
+
+set(PROJECT_VESRION ${VERSION_MAJOR}.${VERSION_MINOR}.${PATCH_VERSION})
+
+project(template VERSION ${PROJECT_VESRION})
 
 option(WITH_BOOST_TEST "Whether to build Boost test" ON)
 
