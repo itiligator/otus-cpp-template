@@ -16,7 +16,7 @@ jobs:
       - name: Prepare dependencies
         run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
       - name: Build binaries
-        run:
+        run: |
           cmake .
           cmake --build . --target all
       - name: Create debian package
