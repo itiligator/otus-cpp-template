@@ -8,24 +8,38 @@ on:
 
 jobs:
   build:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
-      - run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
-      - run: cmake . -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
-      - run: cmake --build .
-      - run: cmake --build . --target test
-      - run: cmake --build . --target package
+      - name: Prepare dependencies
+        run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
+      - name: Build binaries
+        run: |
+          cmake . -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
+          cmake --build . --target all
+      - name: Create debian package
+        run: |
+          cmake --build . --target package
+          echo "PACKAGE_FILENAME=$(find . -type f -iname "*.deb" | head -1 | xargs basename)" >> $GITHUB_ENV
+          echo "PACKAGE FILENAME"
+          echo ${{ env.PACKAGE_FILENAME }}
+      - name: Run tests
+        run: cmake --build . --target test
+      - name: Read version from header
+        run: |
+          echo "VERSION_MAJOR=$(cat version.h.in | grep MAJOR | tr -dc '0-9')" >> $GITHUB_ENV
+          echo "VERSION_MINOR=$(cat version.h.in | grep MINOR | tr -dc '0-9')" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          tag_name: ${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.${{ github.run_number }}
+          release_name: Release ${{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.${{ github.run_number }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
@@ -35,6 +49,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./helloworld-0.0.${{ github.run_number }}-Linux.deb
-          asset_name: helloworld-0.0.${{ github.run_number }}-Linux.deb
+          asset_path: ./${{ env.PACKAGE_FILENAME }}
+          asset_name: ${{ env.PACKAGE_FILENAME }}
           asset_content_type: application/vnd.debian.binary-package
