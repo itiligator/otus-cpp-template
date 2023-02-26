@@ -8,29 +8,33 @@ on:
 
 jobs:
   build:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
-      - run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
-      - run: cmake . -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
-      - run: cmake --build .
-      - run: cmake --build . --target test
-      - run: cmake --build . --target package
-      - name: Read version from header
+      - name: Prepare dependencies
+        run: sudo apt-get update && sudo apt-get install libboost-test-dev -y
+      - name: Build
+        run: |
+          cmake . -DPATCH_VERSION=${{ github.run_number }} -DWITH_BOOST_TEST=ON
+          cmake --build . --target all
+          cmake --build . --target package
+      - name: Run tests
+        run: cmake --build . --target test
+      - name: Read version from number
         run: |
           echo "VERSION_MAJOR=$(cat version.h.in | grep MAJOR | tr -dc '0-9')" >> $GITHUB_ENV
           echo "VERSION_MINOR=$(cat version.h.in | grep MINOR | tr -dc '0-9')" >> $GITHUB_ENV
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
-        permissions: write-all
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.run_number }}
-          release_name: Release ${{ github.run_number }}
+          tag_name: {{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.${{ github.run_number }}
+          release_name: Release {{ env.VERSION_MAJOR }}.${{ env.VERSION_MINOR }}.${{ github.run_number }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
