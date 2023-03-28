@@ -50,17 +50,17 @@ target_compile_options(somelib PRIVATE
 enable_testing()
 
 add_executable(
-        tests
+        gtests
         tests/gtest.cc
 )
 target_link_libraries(
-        tests
+        gtests
         GTest::gtest_main
         somelib
 )
 
 include(GoogleTest)
-gtest_discover_tests(tests)
+gtest_discover_tests(gtests)
 
 
 install(TARGETS ${MAIN_APP_NAME} RUNTIME DESTINATION bin COMPONENT application)

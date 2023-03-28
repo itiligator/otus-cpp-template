@@ -3,3 +3,7 @@
 //
 
 #include <gtest/gtest.h>
+
+TEST(Dummy, DummyTest){
+    ASSERT_EQ(true, true);
+}
